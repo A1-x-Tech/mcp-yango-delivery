@@ -22,7 +22,7 @@ cancellation terms and hands the recipient a tracking link.
    ```bash
    claude mcp add yango-delivery \
      -e YANGO_DELIVERY_TOKEN=your_token \
-     -- npx -y mcp-yango-delivery
+     -- npx -y mcp-yango-delivery@latest
    ```
 
 3. Ask the assistant: "How much would it cost to deliver a 2 kg parcel from our
@@ -95,7 +95,7 @@ The token is issued in the delivery personal account (Integration tab →
 ```bash
 claude mcp add yango-delivery \
   -e YANGO_DELIVERY_TOKEN=your_token \
-  -- npx -y mcp-yango-delivery
+  -- npx -y mcp-yango-delivery@latest
 ```
 
 </details>
@@ -110,7 +110,7 @@ claude mcp add yango-delivery \
   "mcpServers": {
     "yango-delivery": {
       "command": "npx",
-      "args": ["-y", "mcp-yango-delivery"],
+      "args": ["-y", "mcp-yango-delivery@latest"],
       "env": { "YANGO_DELIVERY_TOKEN": "your_token" }
     }
   }
@@ -129,7 +129,7 @@ claude mcp add yango-delivery \
   "mcpServers": {
     "yango-delivery": {
       "command": "npx",
-      "args": ["-y", "mcp-yango-delivery"],
+      "args": ["-y", "mcp-yango-delivery@latest"],
       "env": { "YANGO_DELIVERY_TOKEN": "your_token" }
     }
   }
@@ -149,7 +149,7 @@ claude mcp add yango-delivery \
     "yango-delivery": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "mcp-yango-delivery"],
+      "args": ["-y", "mcp-yango-delivery@latest"],
       "env": { "YANGO_DELIVERY_TOKEN": "your_token" }
     }
   }
