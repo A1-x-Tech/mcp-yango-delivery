@@ -1,0 +1,23 @@
+{
+  "name": "mcp-yango-delivery",
+  "version": "0.0.1",
+  "description": "MCP server for Yango Delivery — express-courier B2B API: price calculation, delivery claims and tracking. For Claude, Cursor, Codex and other AI clients.",
+  "keywords": ["mcp", "model-context-protocol", "yango", "yango-delivery", "delivery", "logistics", "claude", "cursor", "codex"],
+  "homepage": "https://github.com/A1-x-Tech/mcp-yango-delivery#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/A1-x-Tech/mcp-yango-delivery.git"
+  },
+  "license": "MIT",
+  "author": "gistrec <gistrec@gmail.com>",
+  "type": "module",
+  "bin": {
+    "mcp-yango-delivery": "index.js"
+  },
+  "files": [
+    "index.js"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
