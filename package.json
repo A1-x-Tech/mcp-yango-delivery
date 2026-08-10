@@ -1,6 +1,6 @@
 {
   "name": "mcp-yango-delivery",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for the Yango Delivery B2B API (international Yandex Delivery) — express-courier price checks, delivery claims, courier tracking and confirmation codes for AI agents.",
   "mcpName": "io.github.A1-x-Tech/mcp-yango-delivery",
   "type": "module",
