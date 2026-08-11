@@ -7,6 +7,13 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-08-11
+
+### Changed
+
+- Declared stable. The tool surface, input schemas and environment variables of 0.1.x carry over
+  unchanged — this release marks API stability, not new behaviour.
+
 ## [0.1.0] — 2026-08-09
 
 First full release (version 0.0.1 was a stub reserving the npm name).
