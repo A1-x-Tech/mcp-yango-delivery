@@ -2,6 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/mcp-yango-delivery)](https://www.npmjs.com/package/mcp-yango-delivery)
 [![CI](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml/badge.svg)](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml)
+[![Glama](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery/badges/score.svg)](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 MCP server for the **Yango Delivery B2B API** (the international brand of Yandex
