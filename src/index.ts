@@ -10,6 +10,27 @@ import { registerClaimsTools } from "./tools/claims.js";
 import { registerTrackingTools } from "./tools/tracking.js";
 import { registerRawTool } from "./tools/raw.js";
 
+/**
+ * Prose handed to the calling model in the `initialize` result, before it sees a
+ * single tool. It carries what the per-tool descriptions cannot: which contour of
+ * the API this is (and which endpoints therefore do not exist), that every call
+ * hits production with no sandbox, and the failure modes that read as something
+ * else (a reset token, an unretried write, a claim that is simply not active yet).
+ */
+const INSTRUCTIONS =
+  "Yango Delivery is the international brand of Yandex Delivery, and this server speaks only the " +
+  "express (claims) contour of its B2B API: same-day, on-demand courier runs. The Russia-only " +
+  "offers/calculate method and the platform contour are absent: no pickup-point or " +
+  "next-day-delivery tools here, and every call is scoped to the one cabinet behind the token. Rate " +
+  "limits are unpublished: 429 is retried with backoff automatically, but a timeout or 5xx on " +
+  "accept/cancel is never replayed — re-read with get_claim to see whether the write landed rather " +
+  "than repeating it. The token never expires, so 401/403 means a wrong token or one reset by a " +
+  "cabinet password change, not a bad request; a 409 from the tracking tools is about the claim's " +
+  "state (not active, no courier or links yet), and a wrong claim_id gives 404. Everything hits " +
+  "production and there is no sandbox: an accepted claim dispatches a real courier and is billed, " +
+  "and cancelling one can be paid, so confirm with the user before accept_claim, cancel_claim, " +
+  "create_claim with auto_accept=true, or a state-changing raw_request.";
+
 /** Reads the package version so the server reports its real version to MCP clients. */
 function readVersion(): string {
   try {
@@ -45,10 +66,14 @@ async function main(): Promise<void> {
   const config = await loadConfigOrExit(telemetry);
   const client = new DeliveryClient(config);
 
-  const server = new McpServer({
-    name: "mcp-yango-delivery",
-    version: readVersion(),
-  });
+  const server = new McpServer(
+    {
+      name: "mcp-yango-delivery",
+      version: readVersion(),
+    },
+    // Surfaces in the initialize result, so the model reads it before its first call.
+    { instructions: INSTRUCTIONS },
+  );
 
   instrumentToolCalls(server, telemetry);
   server.server.oninitialized = () => {

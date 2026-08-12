@@ -86,6 +86,11 @@ test("dist bin completes an MCP handshake over stdio and lists every tool", asyn
     // The handshake reported the real server identity.
     const server = client.getServerVersion();
     assert.equal(server?.name, "mcp-yango-delivery");
+    // ...and the prose the model reads before picking a tool.
+    const instructions = client.getInstructions();
+    assert.equal(typeof instructions, "string");
+    assert.ok(instructions.length > 100, `instructions too short: ${instructions.length} chars`);
+    assert.match(instructions, /no sandbox/);
   } finally {
     await client.close();
   }
