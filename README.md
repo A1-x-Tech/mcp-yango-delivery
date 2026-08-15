@@ -13,6 +13,8 @@ Yango Delivery MCP lets an AI assistant estimate an express-courier delivery, cr
 - **One controlled escape hatch.** `raw_request` covers API methods without a dedicated tool and blocks requests to foreign hosts.
 - **Safe retries.** The server retries temporary rate-limit errors and only retries reads or idempotent claim creation after transient failures.
 
+[Connect the server](#quick-start) · [Explore use cases](#what-you-can-ask-it-to-do) · [Open technical documentation](#technical-documentation)
+
 ## See it work in a minute
 
 > **You:** Estimate delivery for a 2 kg parcel from our office to Amir Timur Avenue 107.
@@ -222,6 +224,8 @@ Questions, ideas and contributions — [GitHub Issues](https://github.com/A1-x-T
 ### Yango Delivery MCP
 
 Yango Delivery MCP помогает через AI-приложение рассчитать экспресс-доставку, создать и подтвердить заказ, узнать положение курьера и отправить получателю ссылку для отслеживания. Сервер работает с корпоративным B2B API доставки и подходит для аккаунтов за пределами российского контура Яндекс Доставки.
+
+[Подключить сервер](#быстрый-старт) · [Посмотреть сценарии](#что-можно-поручить) · [Открыть техническую документацию](docs/TOOLS.md)
 
 ### Быстрый старт
 
