@@ -1,5 +1,7 @@
 # <img src="./assets/a1-logo.svg" alt="A1" width="40"> Yango Delivery MCP
 
+**English** | [Русский](./README.ru.md)
+
 [![npm](https://img.shields.io/npm/v/mcp-yango-delivery)](https://www.npmjs.com/package/mcp-yango-delivery)
 [![CI](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml/badge.svg)](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml)
 [![Glama](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery/badges/score.svg)](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery)
@@ -54,7 +56,6 @@ Start with:
 - [Limits and background work](#limits-and-background-work)
 - [Technical documentation](#technical-documentation)
 - [Support](#support)
-- [Русская версия](#русская-версия)
 
 ## Quick start
 
@@ -333,55 +334,3 @@ The implementation is in [`src/telemetry.ts`](src/telemetry.ts).
 ## Support
 
 Found a bug or missing a use case? [Create an issue](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) or message us on [Telegram](https://t.me/a1_mcp).
-
----
-
-## Русская версия
-
-### Yango Delivery MCP
-
-**A1 Yango Delivery MCP** подключает AI-приложение к корпоративному аккаунту Yango Delivery. Можно рассчитать экспресс-доставку, заказать курьера, следить за маршрутом и отправить получателю ссылку для отслеживания.
-
-Сервер работает с международным Express Claims API. Доставка на следующий день, ПВЗ и постаматы не поддерживаются.
-
-Начните с безопасного запроса:
-
-> Рассчитай доставку посылки 2 кг с [адреса отправления] на [адрес получателя].
-
-### Быстрый старт
-
-Получите интеграционный токен в разделе **Integration** корпоративного кабинета и добавьте сервер:
-
-```bash
-codex mcp add yango-delivery \
-  --env YANGO_DELIVERY_TOKEN=ваш_токен \
-  -- npx -y mcp-yango-delivery@latest
-```
-
-Полные инструкции для Codex, Claude Code, Claude Desktop, Cursor и VS Code находятся в разделе [Quick start](#quick-start).
-
-### Что можно поручить
-
-- Рассчитать цену, расстояние и ETA без создания заявки.
-- Создать заявку, проверить предложение и отдельной командой заказать курьера.
-- Найти доставку и узнать её текущий статус.
-- Получить положение курьера, ETA, временный телефон, код подтверждения и публичную ссылку.
-- Проверить стоимость отмены и отменить доставку.
-
-### Когда создаётся реальная доставка
-
-Расчёт цены ничего не создаёт. `create_claim` добавляет заявку в аккаунт, но по умолчанию ещё не заказывает курьера. `accept_claim` запускает поиск курьера и может привести к списанию. Параметр `auto_accept: true` пропускает отдельное подтверждение.
-
-Песочница не описана. Перед подтверждением проверяйте цену, адреса, контакты и состав отправления. Перед отменой узнайте её актуальные условия: бесплатно, платно или уже невозможно.
-
-Сервер работает только во время вызова из AI-приложения. Если приложение поддерживает задания по расписанию, настройте периодическую проверку активной доставки.
-
-### Техническая документация
-
-- [Справочник инструментов](docs/TOOLS.md)
-- [Настройки и разработка](docs/DEVELOPMENT.md)
-- [Документация Yango/Yandex Delivery API](https://yandex.com/support/delivery-profile/en/api/express/overview)
-
-### Поддержка
-
-Нашли ошибку или не хватает сценария? [Создайте issue](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) или напишите в [Telegram](https://t.me/a1_mcp).
