@@ -95,3 +95,52 @@ test("dist bin completes an MCP handshake over stdio and lists every tool", asyn
     await client.close();
   }
 });
+
+/**
+ * The degraded-start contract: without a token the binary used to exit(1)
+ * before the handshake, leaving the client a dead server and no reason. It
+ * must now start, list every tool, open the instructions with the fix, and
+ * answer a tool call with the actionable error — offline: the CredentialsError
+ * fires before any fetch, so this test never touches the network.
+ */
+test("dist bin starts without a token: handshake, tool list, actionable call error", async () => {
+  const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+  const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
+
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key, value]) => value !== undefined && !key.startsWith("YANGO_DELIVERY_"),
+    ),
+  );
+  env.ASKADS_TELEMETRY = "0"; // keep the suite offline
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: [fileURLToPath(new URL("../dist/index.js", import.meta.url))],
+    env,
+    stderr: "pipe",
+  });
+  const client = new Client({ name: "dist-smoke-unconfigured", version: "0.0.0" });
+  await client.connect(transport);
+  try {
+    // The model must read the fix before it picks a tool.
+    const instructions = client.getInstructions() ?? "";
+    assert.match(instructions, /not connected/);
+    assert.match(instructions, /YANGO_DELIVERY_TOKEN/);
+    assert.match(instructions, /restart/);
+
+    const { tools } = await client.listTools();
+    assert.deepEqual(tools.map((t) => t.name).sort(), ALL_TOOLS);
+
+    // A tool call fails with the exact message instead of killing the server.
+    const result = await client.callTool({ name: "get_claim", arguments: { claim_id: "c1" } });
+    assert.equal(result.isError, true);
+    const text = result.content.map((c) => c.text ?? "").join(" ");
+    assert.match(
+      text,
+      /YANGO_DELIVERY_TOKEN is required \(OAuth token from the delivery cabinet, Integration tab -> "Get token"\)\./,
+    );
+    assert.match(text, /restart the server/);
+  } finally {
+    await client.close();
+  }
+});

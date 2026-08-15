@@ -7,6 +7,21 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **The server no longer exits because of configuration.** A missing `YANGO_DELIVERY_TOKEN`
+  is a survivable state: the server starts, completes the MCP handshake, serves the full
+  tool list and opens the `initialize` instructions with the fix (set the variable and
+  restart the server — it is read only at startup). A tool call then fails with that same
+  actionable message (`CredentialsError`, an `isError` response) — without retries and
+  without touching the network — instead of the client showing a dead server with no reason.
+
+### Added
+
+- Telemetry event `unconfigured_start` (with the historical `missing_token` reason code):
+  a server without a token now survives to the MCP handshake, so a degraded start is
+  counted separately instead of inflating `server_start` or dying as `startup_failed`.
+
 ## [1.0.1] — 2026-08-12
 
 ### Added

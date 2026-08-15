@@ -1,12 +1,13 @@
 import type { DeliveryConfig } from "./types.js";
 
 /** Default API host — the EN docs use the same host for Russia and other countries. */
-const DEFAULT_BASE = "https://b2b.taxi.yandex.net";
+export const DEFAULT_BASE = "https://b2b.taxi.yandex.net";
 
 /**
- * A missing or malformed environment variable. Thrown instead of exiting on the
- * spot so index.ts can report the drop-off before the process dies; `reason` is
- * the machine-readable code that ships with that ping (never a variable's value).
+ * A malformed environment variable. Thrown instead of exiting on the spot so
+ * index.ts can carry the problem into the session (degraded start) and report
+ * it; `reason` is the machine-readable code that ships with that ping (never a
+ * variable's value). A *missing* variable is NOT a ConfigError — see loadConfig.
  */
 export class ConfigError extends Error {
   readonly reason: string;
@@ -18,34 +19,30 @@ export class ConfigError extends Error {
   }
 }
 
-function die(message: string, reason: string): never {
-  throw new ConfigError(message, reason);
-}
-
 /**
- * Builds the client config from environment variables, throwing ConfigError if
- * a required one is missing.
+ * Builds the client config from environment variables.
  *
- *   YANGO_DELIVERY_TOKEN        Bearer token (required)
+ * A missing YANGO_DELIVERY_TOKEN is NOT an error here: the server starts
+ * anyway and the check happens per tool call (CredentialsError in client.ts),
+ * so an unconfigured install completes the MCP handshake and the model can
+ * tell the user which variable to set — instead of dying before `initialize`
+ * and leaving a dead server with no reason. There is no in-chat login for a
+ * Bearer token: the fix is the operator setting the variable and restarting
+ * the server.
+ *
+ *   YANGO_DELIVERY_TOKEN        Bearer token
  *   YANGO_DELIVERY_BASE_URL     API root override
  *   YANGO_DELIVERY_LANG         Accept-Language (default en)
  *   YANGO_DELIVERY_TIMEOUT_MS   per-request timeout (default 60000)
  *   YANGO_DELIVERY_MAX_RETRIES  transient-error retries (default 3)
  */
 export function loadConfig(): DeliveryConfig {
-  const token = process.env.YANGO_DELIVERY_TOKEN;
-  if (!token) {
-    die(
-      'YANGO_DELIVERY_TOKEN is required (OAuth token from the delivery cabinet, Integration tab -> "Get token").',
-      "missing_token",
-    );
-  }
-
   const timeoutMs = Number(process.env.YANGO_DELIVERY_TIMEOUT_MS);
   const maxRetries = Number(process.env.YANGO_DELIVERY_MAX_RETRIES);
 
   return {
-    token,
+    // An empty string reads as absent, never as an empty credential.
+    token: process.env.YANGO_DELIVERY_TOKEN || undefined,
     baseUrl: process.env.YANGO_DELIVERY_BASE_URL || DEFAULT_BASE,
     lang: process.env.YANGO_DELIVERY_LANG || "en",
     timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 60_000,

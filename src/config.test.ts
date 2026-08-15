@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { ConfigError, loadConfig } from "./config.js";
+import { loadConfig } from "./config.js";
 
 /** Every env var the config reads — cleared by default in each test. */
 const ALL_VARS: Record<string, string | undefined> = {
@@ -29,19 +29,27 @@ function withEnv(vars: Record<string, string | undefined>, run: () => void): voi
   }
 }
 
-test("a missing token reports missing_token, via ConfigError (not exit)", () => {
-  let caught: unknown;
+/**
+ * A missing token used to throw, which killed the process before the MCP
+ * handshake and left the user with a dead server and no reason. It is now a
+ * survivable state: the server starts, answers initialize/tools/list, and the
+ * client raises CredentialsError at call time (pinned in client.test.ts).
+ * Pinned here because reverting it would restore that dead end.
+ */
+test("a missing token does not throw — the server must start degraded", () => {
   withEnv({}, () => {
-    try {
-      loadConfig();
-    } catch (err) {
-      caught = err;
-    }
+    const config = loadConfig();
+    assert.equal(config.token, undefined);
+    // The defaults stay intact so the degraded server is otherwise normal.
+    assert.equal(config.baseUrl, "https://b2b.taxi.yandex.net");
+    assert.equal(config.lang, "en");
   });
-  assert.ok(caught instanceof ConfigError, "config problems must throw ConfigError, not exit");
-  // The reason code is the vocabulary the telemetry dashboard groups by —
-  // renaming it silently splits a bar in two, so it is pinned here.
-  assert.equal(caught.reason, "missing_token");
+});
+
+test("an empty token is treated as absent, not as an empty credential", () => {
+  withEnv({ YANGO_DELIVERY_TOKEN: "" }, () => {
+    assert.equal(loadConfig().token, undefined);
+  });
 });
 
 test("a token alone applies every default", () => {

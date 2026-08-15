@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DeliveryClient } from "./client.js";
+import { CredentialsError } from "./types.js";
 import type { DeliveryConfig } from "./types.js";
 
 const BASE = "https://b2b.taxi.yandex.net";
@@ -395,6 +396,39 @@ test("request() rejects an absolute path (SSRF) without fetching", async () => {
     } finally {
       mock.restore();
     }
+  }
+});
+
+// --- Missing credentials (degraded start) ---
+
+// The exact startup-era text, relayed verbatim at call time — pinned so a
+// reworded message does not silently change what the model tells the user.
+const MISSING_TOKEN_TEXT =
+  'YANGO_DELIVERY_TOKEN is required (OAuth token from the delivery cabinet, Integration tab -> "Get token").';
+
+test("request() without a token throws CredentialsError; fetch is never called", async () => {
+  const mock = mockFetch(() => new Response("{}", { status: 200 }));
+  try {
+    const client = new DeliveryClient({ baseUrl: BASE, lang: "en" });
+    await assert.rejects(
+      () => client.getClaim("c1"),
+      (err: unknown) => {
+        assert.ok(err instanceof CredentialsError, "must be a CredentialsError");
+        assert.equal((err as Error).name, "CredentialsError");
+        const message = (err as Error).message;
+        assert.ok(
+          message.startsWith(MISSING_TOKEN_TEXT),
+          `message must open with the exact startup text, got: ${message}`,
+        );
+        assert.match(message, /restart the server/, "and say the server needs a restart");
+        return true;
+      },
+    );
+    // Not transport trouble: the retry/backoff branch — and fetch itself —
+    // must never run for a configuration problem.
+    assert.equal(mock.calls.length, 0, "fetch must not be called without credentials");
+  } finally {
+    mock.restore();
   }
 });
 
