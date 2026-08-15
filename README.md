@@ -5,47 +5,71 @@
 [![Glama](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery/badges/score.svg)](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Yango Delivery MCP lets an AI assistant estimate an express-courier delivery, create and confirm a claim, track the courier and share a recipient link — using the Yango Delivery B2B API in natural language. It is built for corporate delivery accounts and works with Claude, Cursor, Codex and other MCP clients.
+**A1 Yango Delivery MCP** connects an AI app to a corporate Yango Delivery account. Estimate an express delivery, order a courier, track the route and share a tracking link with the recipient using ordinary language.
 
-- **Estimate before ordering.** `check_price` returns price, distance and ETA without creating a claim.
-- **Follow the full claim lifecycle.** Create, confirm, inspect and cancel express deliveries with the relevant status and cancellation terms.
-- **Keep the recipient informed.** Get courier position, point ETA, temporary courier phone and public tracking links.
-- **One controlled escape hatch.** `raw_request` covers API methods without a dedicated tool and blocks requests to foreign hosts.
-- **Safe retries.** The server retries temporary rate-limit errors and only retries reads or idempotent claim creation after transient failures.
+This server works with the international Express Claims API. It does not support next-day delivery, pickup points or parcel lockers.
+
+- **13 tools.** Seven for the delivery lifecycle, five for tracking and courier contact, plus one direct API request tool.
+- **Estimate before ordering.** Check the current price, route distance and ETA without creating a delivery claim.
+- **Create and order separately.** A claim can be prepared and reviewed before courier search starts.
+- **Follow an active delivery.** Get its status, courier position, point ETAs, temporary phone number, confirmation code and recipient tracking link.
+
+Start with:
+
+> Estimate delivery of a 2 kg parcel from [pickup address] to [delivery address].
 
 [Connect the server](#quick-start) · [Explore use cases](#what-you-can-ask-it-to-do) · [Open technical documentation](#technical-documentation)
 
+---
+
 ## See it work in a minute
 
-> **You:** Estimate delivery for a 2 kg parcel from our office to Amir Timur Avenue 107.
+> **You:** Estimate delivery of a 2 kg parcel from our warehouse to the customer's address.
 >
-> **Assistant:** I checked the route and returned the current price, distance and estimated pickup time. No claim was created.
+> **Assistant:** I returned the current price, route distance and ETA. No delivery claim was created.
 >
-> **You:** Create the delivery for today at 18:00 and confirm it.
+> **You:** Create the claim and stop before ordering the courier.
 >
-> **Assistant:** The claim was created and accepted. Courier search has started; I returned the claim id and current status.
-> **You:** Where is the courier now? Send me a link for the recipient.
+> **Assistant:** The claim has been created. I will show its id, price, status and version before acceptance.
 >
-> **Assistant:** I returned the current courier position and a public tracking link.
+> **You:** Accept the offer.
+>
+> **Assistant:** The claim has been accepted and courier search has started.
+>
+> **You:** Send me the recipient's tracking link.
+>
+> **Assistant:** I returned the public tracking link for the destination.
 
-> Pricing, availability, status and cancellation terms always come from the connected delivery account and the API response.
+> Price, availability, status and cancellation terms always come from the connected delivery account and the current API response.
+
+## Contents
+
+- [Quick start](#quick-start)
+- [What you can ask it to do](#what-you-can-ask-it-to-do)
+- [How a delivery becomes real](#how-a-delivery-becomes-real)
+- [What changes in the account](#what-changes-in-the-account)
+- [Getting access](#getting-access)
+- [Configuration](#configuration)
+- [Data and telemetry](#data-and-telemetry)
+- [Limits and background work](#limits-and-background-work)
+- [Technical documentation](#technical-documentation)
+- [Support](#support)
+- [Русская версия](#русская-версия)
 
 ## Quick start
 
-You need Node.js 20+ and a Yango Delivery corporate account with an integration token. The token is stored in the AI client's local configuration, so treat it like a password.
+You need Node.js 20+, a Yango Delivery corporate account and an integration token.
 
-1. [Get a token](#getting-access) in the delivery personal account.
-2. Add the server using the instructions for your AI client below.
-3. Start a new task and begin with a read-only request:
+1. [Get an integration token](#getting-access).
+2. Add the server to your AI app using one of the instructions below.
+3. Start with a price estimate:
 
-   > Estimate delivery of a 2 kg parcel from our office to Amir Timur Avenue 107.
-
-The browser versions of ChatGPT and Claude cannot attach a local `npx`/stdio server directly. Use a desktop app, CLI or IDE integration listed below.
-
-### Add it to other AI clients
+   > Estimate delivery of a 2 kg parcel from [pickup address] to [delivery address].
 
 <details open>
 <summary><strong>Codex</strong></summary>
+
+<br>
 
 **In the app:**
 
@@ -68,32 +92,13 @@ codex mcp list
 ```
 
 [Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
-</details>
 
-<details>
-<summary><strong>Claude Desktop</strong></summary>
-
-Open **Settings → Developer → Edit Config** and add this entry to `mcpServers`:
-
-```json
-{
-  "mcpServers": {
-    "yango-delivery": {
-      "command": "npx",
-      "args": ["-y", "mcp-yango-delivery@latest"],
-      "env": { "YANGO_DELIVERY_TOKEN": "your_token" }
-    }
-  }
-}
-```
-
-If **Edit Config** is unavailable, use `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows.
-
-[Claude Desktop MCP documentation](https://claude.com/docs/connectors/building/mcp-apps/getting-started)
 </details>
 
 <details>
 <summary><strong>Claude Code</strong></summary>
+
+<br>
 
 ```bash
 claude mcp add \
@@ -104,15 +109,54 @@ claude mcp add \
   -- npx -y mcp-yango-delivery@latest
 ```
 
-Check it with `claude mcp list`.
+Check the connection:
+
+```bash
+claude mcp list
+```
 
 [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp)
+
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
+
+<br>
+
+1. Open Claude Desktop and go to **Settings → Developer**.
+2. Select **Edit Config**.
+3. Add the server to `mcpServers`:
+
+```json
+{
+  "mcpServers": {
+    "yango-delivery": {
+      "command": "npx",
+      "args": ["-y", "mcp-yango-delivery@latest"],
+      "env": {
+        "YANGO_DELIVERY_TOKEN": "your_token"
+      }
+    }
+  }
+}
+```
+
+If **Edit Config** is unavailable, open the configuration file directly:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+[Claude Desktop MCP documentation](https://claude.com/docs/connectors/building/mcp-apps/getting-started)
+
 </details>
 
 <details>
 <summary><strong>Cursor</strong></summary>
 
-Add a global server to `~/.cursor/mcp.json` on macOS/Linux or `%USERPROFILE%\.cursor\mcp.json` on Windows:
+<br>
+
+Add a user-level server to `~/.cursor/mcp.json` on macOS/Linux or `%USERPROFILE%\.cursor\mcp.json` on Windows:
 
 ```json
 {
@@ -121,17 +165,22 @@ Add a global server to `~/.cursor/mcp.json` on macOS/Linux or `%USERPROFILE%\.cu
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-yango-delivery@latest"],
-      "env": { "YANGO_DELIVERY_TOKEN": "your_token" }
+      "env": {
+        "YANGO_DELIVERY_TOKEN": "your_token"
+      }
     }
   }
 }
 ```
 
 [Cursor MCP documentation](https://cursor.com/docs/mcp)
+
 </details>
 
 <details>
 <summary><strong>VS Code</strong></summary>
+
+<br>
 
 Run **MCP: Open User Configuration** from the Command Palette and add:
 
@@ -142,7 +191,9 @@ Run **MCP: Open User Configuration** from the Command Palette and add:
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-yango-delivery@latest"],
-      "env": { "YANGO_DELIVERY_TOKEN": "${input:yango_delivery_token}" }
+      "env": {
+        "YANGO_DELIVERY_TOKEN": "${input:yango_delivery_token}"
+      }
     }
   },
   "inputs": [
@@ -156,71 +207,132 @@ Run **MCP: Open User Configuration** from the Command Palette and add:
 }
 ```
 
-Check it with **MCP: List Servers**.
+Check the server with **MCP: List Servers**.
 
 [VS Code MCP documentation](https://code.visualstudio.com/docs/agent-customization/mcp-servers)
+
 </details>
 
 ## What you can ask it to do
 
-### Estimate and order an express delivery
+### Estimate an express delivery
 
-- **Check the price.** `check_price` returns the price, route distance and ETA without creating a claim.
-- **Create a claim.** `create_claim` prepares a real delivery request with an idempotent `request_id`.
-- **Confirm the claim.** `accept_claim` starts the courier search and can lead to a real charge.
-- **Inspect or cancel.** `get_claim` returns status and pricing; `get_cancel_info` must be checked before `cancel_claim`.
+- Calculate the current price, route distance and ETA without creating a claim.
+- Estimate courier, express or cargo service for the supplied addresses, weight and dimensions.
+- Check whether the API can build the route and satisfy the requested vehicle or delivery requirements.
 
-### Track and contact the courier
+### Prepare and order a courier
 
-- **Position and ETA.** `get_performer_position` and `get_points_eta` return the current route information.
-- **Recipient link.** `get_tracking_links` returns public tracking links.
-- **Contact details.** `get_courier_phone` returns a temporary forwarded number and `get_confirmation_code` returns the pickup or delivery code.
+- Create a claim with sender and recipient contacts, route points, items and delivery requirements.
+- Review the returned price, status and claim version before ordering.
+- Accept a claim after successful estimation and start courier search.
+- Find a claim by id, phone number, status, date or external order id.
 
-### Use other documented API methods
+### Track the delivery and contact the courier
 
-`raw_request` calls a relative path under the delivery API. Use it for tariffs, delivery methods, proof of delivery, claim editing and other endpoints without a dedicated tool.
+- Get the current courier position and ETA for each route point.
+- Generate a public tracking link for the recipient.
+- Get a temporary forwarded phone number for the courier.
+- Get a pickup or delivery confirmation code when the current claim supports one.
 
-## When a real delivery is created
+### Check and cancel a delivery
 
-The server is not read-only. `check_price`, `get_claim`, `search_claims`, tracking and cancellation-information tools read data. `create_claim` creates a real claim; `accept_claim` confirms it and starts the courier search. Accepted claims can lead to real charges.
+- Check whether cancellation is free, paid or no longer available.
+- Cancel a claim using its current version and the cancellation mode returned by the API.
 
-Ask the assistant to calculate first, then show the claim details, and confirm only when you are ready to order. The MCP server exposes tool annotations, but the final confirmation behaviour belongs to the AI client.
+### Use additional API methods
+
+`raw_request` covers methods without a dedicated tool, including tariffs, delivery methods, proof of delivery, claim editing and return operations. It can create or change real data, so it is intended for technical users who understand the upstream API.
+
+Complete schemas, response fields and status details are available in the [tool reference](docs/TOOLS.md).
+
+## How a delivery becomes real
+
+1. **Estimate.** A price check returns the current offer, distance and ETA without creating anything.
+2. **Create.** A claim is added to the account and moves through estimation. By default, no courier is ordered yet.
+3. **Review.** Read the latest claim status, price and version. A successful claim becomes ready for approval.
+4. **Accept.** Acceptance starts courier search. From this point, the delivery is ordered and can lead to a real charge.
+5. **Track.** Once a courier is assigned, the server can return the position, ETA, contact details and recipient link.
+
+The priced offer usually expires about ten minutes after estimation. If `auto_accept: true` is passed when creating a claim, the separate review and acceptance step is skipped and the courier can be ordered automatically.
+
+## What changes in the account
+
+The server exposes MCP annotations for reading, writing and destructive actions. The AI client decides when and how to ask for confirmation.
+
+| Action | Result | Changes the account |
+|---|---|---:|
+| Price estimate | Returns the current price, distance and ETA | No |
+| Read, search and tracking tools | Returns claim, courier and cancellation information | No |
+| Create a claim | Adds a real claim, but does not order a courier by default | Yes |
+| Accept a claim | Starts courier search and can lead to a charge | Yes |
+| Cancel a claim | Cancels the delivery; a cancellation fee may apply | Yes |
+| `raw_request` | Calls another API method, including possible writes | Depends on the method |
+
+Claim creation uses a unique `request_id`, so repeating it with the same id returns the same claim. Acceptance and cancellation are not automatically repeated after a network error or a 5xx response because the operation may already have succeeded. Read the current claim before trying again.
 
 ## Getting access
 
-1. Register as a corporate client and sign the delivery-service contract.
-2. Open the **Integration** tab in the delivery personal account and choose **Get token**.
-3. Put the token into `YANGO_DELIVERY_TOKEN`.
+1. Register as a corporate Yango Delivery client and sign the delivery-service contract.
+2. Open the **Integration** tab in the delivery account.
+3. Select **Get token**.
+4. Add the token to the AI client as `YANGO_DELIVERY_TOKEN`.
 
-The token never expires on its own, but it is reset when the account password changes. There is no documented sandbox for the express contour: an accepted claim orders a real courier and may result in a real charge.
+The token is tied to the corporate account. It does not expire by itself, but changing the account password resets it.
+
+> The integration token is stored as plain text in the AI client's local configuration. Treat it like a password and never commit a configuration containing a real token.
 
 ## Configuration
 
 | Variable | Required | Default | Description |
 |---|---:|---|---|
-| `YANGO_DELIVERY_TOKEN` | yes | — | Bearer token from the delivery account. |
-| `YANGO_DELIVERY_BASE_URL` | no | `https://b2b.taxi.yandex.net` | API root override. |
-| `YANGO_DELIVERY_LANG` | no | `en` | `Accept-Language` header value. |
-| `YANGO_DELIVERY_TIMEOUT_MS` | no | `60000` | Per-request timeout in milliseconds. |
-| `YANGO_DELIVERY_MAX_RETRIES` | no | `3` | Retries for temporary failures; writes are not replayed unless claim creation is idempotent. |
+| `YANGO_DELIVERY_TOKEN` | yes | — | Bearer token from the delivery account |
+| `YANGO_DELIVERY_BASE_URL` | no | `https://b2b.taxi.yandex.net` | API root override |
+| `YANGO_DELIVERY_LANG` | no | `en` | Value of the `Accept-Language` header |
+| `YANGO_DELIVERY_TIMEOUT_MS` | no | `60000` | Timeout for one request, in milliseconds |
+| `YANGO_DELIVERY_MAX_RETRIES` | no | `3` | Maximum retries for temporary failures; writes are not replayed unless they are idempotent |
+| `ASKADS_TELEMETRY` | no | enabled | `0`, `false`, `off` or `no` disables anonymous telemetry |
+
+## Data and telemetry
+
+### Requests to Yango Delivery
+
+The server runs on your machine and sends claim data directly to `b2b.taxi.yandex.net`. The integration token is attached only to requests to the configured API host. Even `raw_request` accepts a relative path and blocks requests that resolve to another host.
+
+### Anonymous telemetry
+
+By default, the server sends technical events to `usage.gistrec.cloud`: server start, called tool name and a fixed reason code when startup fails.
+
+Events contain a random installation id, package version, AI client name and version, Node.js version and operating system. **The integration token, claim data, tool arguments and prompts are not read or sent.** Telemetry has a two-second timeout and does not block a tool call.
+
+To disable telemetry, add:
+
+```text
+ASKADS_TELEMETRY=0
+```
+
+The implementation is in [`src/telemetry.ts`](src/telemetry.ts).
 
 ## Limits and background work
 
-- **No sandbox is documented.** Treat claim creation and acceptance as production operations.
-- **Rate limits are not published.** When the API returns a temporary 429 limit, the server waits and retries within the configured limit; it does not invent a quota.
-- **No persistent observation.** The server works during a call from the AI client and does not watch claims in the background. If your client supports scheduled tasks, ask it to check a claim status periodically.
-- **No automatic rollback.** After a network interruption, a write can have an uncertain result; inspect the claim before repeating an operation.
+- **There is no documented sandbox.** Treat claim creation and acceptance as production operations.
+- **The offer is time-limited.** The priced offer usually expires about ten minutes after estimation; read the current claim before acceptance.
+- **Tracking requires an active claim.** Position, ETA, contact details and tracking links may be unavailable until a courier is assigned or after the claim is completed.
+- **Numeric API quotas are not published.** When the API returns 429, the server follows `Retry-After` when present and retries up to `YANGO_DELIVERY_MAX_RETRIES`.
+- **There is no background monitoring.** The server works only when called from the AI app. If the app supports scheduled tasks, it can check an active claim periodically.
+- **There is no automatic rollback.** After an uncertain acceptance or cancellation result, read the claim before repeating the action.
 
 ## Technical documentation
 
 - [All tools](docs/TOOLS.md) — input schemas, responses, statuses and errors.
 - [Development](docs/DEVELOPMENT.md) — local setup and project checks.
 - [Publishing](docs/PUBLISHING.md) — package release and MCP catalog listing.
-- [Yango/Yandex Delivery API reference](https://yandex.com/support/delivery-profile/en/api/express/overview) — upstream method documentation.
+- [npm package](https://www.npmjs.com/package/mcp-yango-delivery) — the published `mcp-yango-delivery` package.
+- [Yango/Yandex Delivery API](https://yandex.com/support/delivery-profile/en/api/express/overview) — upstream method documentation.
 
 ## Support
 
-Questions, ideas and contributions — [GitHub Issues](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) or Telegram [@gistrec](http://t.me/gistrec).
+Found a bug or missing a use case? [Create an issue](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) or message us on [Telegram](https://t.me/a1_mcp).
 
 ---
 
@@ -228,43 +340,48 @@ Questions, ideas and contributions — [GitHub Issues](https://github.com/A1-x-T
 
 ### Yango Delivery MCP
 
-Yango Delivery MCP помогает через AI-приложение рассчитать экспресс-доставку, создать и подтвердить заказ, узнать положение курьера и отправить получателю ссылку для отслеживания. Сервер работает с корпоративным B2B API доставки и подходит для аккаунтов за пределами российского контура Яндекс Доставки.
+**A1 Yango Delivery MCP** подключает AI-приложение к корпоративному аккаунту Yango Delivery. Можно рассчитать экспресс-доставку, заказать курьера, следить за маршрутом и отправить получателю ссылку для отслеживания.
 
-[Подключить сервер](#быстрый-старт) · [Посмотреть сценарии](#что-можно-поручить) · [Открыть техническую документацию](docs/TOOLS.md)
+Сервер работает с международным Express Claims API. Доставка на следующий день, ПВЗ и постаматы не поддерживаются.
+
+Начните с безопасного запроса:
+
+> Рассчитай доставку посылки 2 кг с [адреса отправления] на [адрес получателя].
 
 ### Быстрый старт
 
-1. Получите интеграционный токен в личном кабинете корпоративного клиента.
-2. Подключите сервер к Codex, Claude, Cursor или VS Code по инструкциям выше. Для Codex:
+Получите интеграционный токен в разделе **Integration** корпоративного кабинета и добавьте сервер:
 
-   ```bash
-   codex mcp add yango-delivery \
-     --env YANGO_DELIVERY_TOKEN=ваш_токен \
-     -- npx -y mcp-yango-delivery@latest
-   ```
+```bash
+codex mcp add yango-delivery \
+  --env YANGO_DELIVERY_TOKEN=ваш_токен \
+  -- npx -y mcp-yango-delivery@latest
+```
 
-3. Начните с безопасного запроса:
-
-   > Рассчитай доставку посылки 2 кг из офиса на Amir Timur Avenue 107.
+Полные инструкции для Codex, Claude Code, Claude Desktop, Cursor и VS Code находятся в разделе [Quick start](#quick-start).
 
 ### Что можно поручить
 
-- Рассчитать цену и ETA без создания заказа — `check_price`.
-- Создать заявку и подтвердить её отдельными командами — `create_claim`, `accept_claim`.
-- Узнать статус, положение курьера и ETA по точкам маршрута.
-- Получить публичную ссылку для получателя и временный номер курьера.
-- Перед отменой проверить, бесплатна ли она, и только потом отменить заявку.
+- Рассчитать цену, расстояние и ETA без создания заявки.
+- Создать заявку, проверить предложение и отдельной командой заказать курьера.
+- Найти доставку и узнать её текущий статус.
+- Получить положение курьера, ETA, временный телефон, код подтверждения и публичную ссылку.
+- Проверить стоимость отмены и отменить доставку.
 
-### Границы действий
+### Когда создаётся реальная доставка
 
-`check_price` только рассчитывает стоимость. `create_claim` создаёт реальную заявку, а `accept_claim` запускает поиск курьера и может привести к списанию. Песочница для этого контура не описана, поэтому подтверждайте заявку только после проверки деталей.
+Расчёт цены ничего не создаёт. `create_claim` добавляет заявку в аккаунт, но по умолчанию ещё не заказывает курьера. `accept_claim` запускает поиск курьера и может привести к списанию. Параметр `auto_accept: true` пропускает отдельное подтверждение.
 
-Сервер не наблюдает за статусом сам по себе. Если AI-приложение поддерживает задания по расписанию, его можно попросить периодически проверять заявку. После сетевого сбоя автоматического отката нет.
+Песочница не описана. Перед подтверждением проверяйте цену, адреса, контакты и состав отправления. Перед отменой узнайте её актуальные условия: бесплатно, платно или уже невозможно.
 
-### Техническая глубина
+Сервер работает только во время вызова из AI-приложения. Если приложение поддерживает задания по расписанию, настройте периодическую проверку активной доставки.
 
-Полные схемы инструментов и переменных окружения находятся в [технической документации](docs/TOOLS.md). Исходная документация API — [Yango/Yandex Delivery API](https://yandex.com/support/delivery-profile/en/api/express/overview).
+### Техническая документация
+
+- [Справочник инструментов](docs/TOOLS.md)
+- [Настройки и разработка](docs/DEVELOPMENT.md)
+- [Документация Yango/Yandex Delivery API](https://yandex.com/support/delivery-profile/en/api/express/overview)
 
 ### Поддержка
 
-[GitHub Issues](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) или Telegram [@gistrec](http://t.me/gistrec).
+Нашли ошибку или не хватает сценария? [Создайте issue](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) или напишите в [Telegram](https://t.me/a1_mcp).
