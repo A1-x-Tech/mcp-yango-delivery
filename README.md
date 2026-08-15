@@ -35,14 +35,7 @@ Yango Delivery MCP lets an AI assistant estimate an express-courier delivery, cr
 You need Node.js 20+ and a Yango Delivery corporate account with an integration token. The token is stored in the AI client's local configuration, so treat it like a password.
 
 1. [Get a token](#getting-access) in the delivery personal account.
-2. Add the server to your AI client. For Codex CLI:
-
-   ```bash
-   codex mcp add yango-delivery \
-     --env YANGO_DELIVERY_TOKEN=your_token \
-     -- npx -y mcp-yango-delivery@latest
-   ```
-
+2. Add the server using the instructions for your AI client below.
 3. Start a new task and begin with a read-only request:
 
    > Estimate delivery of a 2 kg parcel from our office to Amir Timur Avenue 107.
@@ -54,15 +47,27 @@ The browser versions of ChatGPT and Claude cannot attach a local `npx`/stdio ser
 <details open>
 <summary><strong>Codex</strong></summary>
 
+**In the app:**
+
+1. Open **Settings → Plugins → MCP servers**.
+2. Select **Add server**.
+3. Add the launch command `npx -y mcp-yango-delivery@latest` and the `YANGO_DELIVERY_TOKEN` environment variable with your token.
+
+**From the command line:**
+
 ```bash
 codex mcp add yango-delivery \
   --env YANGO_DELIVERY_TOKEN=your_token \
   -- npx -y mcp-yango-delivery@latest
 ```
 
-Check the connection with `codex mcp list`.
+Check the connection:
 
-[Codex MCP documentation](https://developers.openai.com/codex/mcp/)
+```bash
+codex mcp list
+```
+
+[Codex MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli)
 </details>
 
 <details>
