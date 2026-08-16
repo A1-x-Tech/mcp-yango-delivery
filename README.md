@@ -334,3 +334,13 @@ The implementation is in [`src/telemetry.ts`](src/telemetry.ts).
 ## Support
 
 Found a bug or missing a use case? [Create an issue](https://github.com/A1-x-Tech/mcp-yango-delivery/issues) or message us on [Telegram](https://t.me/a1_mcp).
+
+<br>
+
+<p align="center">
+  <img src="https://github.com/ztemerbekov/a1-yandex-kit-skills/raw/main/assets/images/mona-hifive-yandex-kit-warm.gif" alt="Две Моны дают пять" width="256">
+</p>
+
+<p align="center">
+  Вы дочитали до конца!
+</p>
