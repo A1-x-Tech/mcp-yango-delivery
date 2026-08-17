@@ -342,5 +342,5 @@ Found a bug or missing a use case? [Create an issue](https://github.com/A1-x-Tec
 </p>
 
 <p align="center">
-  Вы дочитали до конца!
+  You made it to the end!
 </p>
