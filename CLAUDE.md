@@ -73,6 +73,8 @@ npm run smoke      # live READ-ONLY call (claims/search limit 1; needs YANGO_DEL
 
 ## Adding a tool
 
+Before changing the tool registry, read [the MCP capability documentation contract](docs/CAPABILITY-DOCUMENTATION.md). Every registered tool must have exactly one task-oriented page in `docs/capabilities/`; update that page, the index, and the coverage test in the same change.
+
 1. Add (or extend) `src/tools/<module>.ts` with the `server.registerTool` call.
 2. If it hits a new endpoint, add a typed method to `src/client.ts` — decide its
    `idempotent` flag consciously (see Conventions).

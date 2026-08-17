@@ -1,5 +1,7 @@
 # Tools
 
+For task-oriented guidance, open the [MCP capability catalog](./capabilities/index.md). This page remains the technical reference for schemas and API responses.
+
 Yango Delivery is a **write API**: the tools below create, accept and cancel
 real deliveries. The server covers the express (claims) contour of the B2B API —
 `https://b2b.taxi.yandex.net`, paths under `/b2b/cargo/integration/v2/*` — the
