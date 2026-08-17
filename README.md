@@ -325,6 +325,7 @@ The implementation is in [`src/telemetry.ts`](src/telemetry.ts).
 
 ## Technical documentation
 
+- [MCP capability catalog](./docs/capabilities/index.md) — task-oriented pages for every tool.
 - [All tools](docs/TOOLS.md) — input schemas, responses, statuses and errors.
 - [Development](docs/DEVELOPMENT.md) — local setup and project checks.
 - [Publishing](docs/PUBLISHING.md) — package release and MCP catalog listing.
