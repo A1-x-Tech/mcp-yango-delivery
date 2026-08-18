@@ -1,11 +1,23 @@
 import { randomUUID } from "node:crypto";
 import type { CancelState, DeliveryConfig } from "./types.js";
-import { DeliveryError } from "./types.js";
+import { CredentialsError, DeliveryError } from "./types.js";
 
 export type HttpMethod = "GET" | "POST";
 
 /** Claims (express) path prefix on b2b.taxi.yandex.net. */
 const PREFIX = "b2b/cargo/integration/v2/";
+
+/**
+ * Call-time text for a missing token — formerly the startup error that killed
+ * the process before the MCP handshake, preserved verbatim (pinned in
+ * client.test.ts). The message is the product: it is what the calling model
+ * relays to the user, so it names the variable to set and says the server
+ * needs a restart — there is no in-chat login for a Bearer token.
+ */
+const MISSING_TOKEN_MESSAGE =
+  'YANGO_DELIVERY_TOKEN is required (OAuth token from the delivery cabinet, Integration tab -> "Get token").' +
+  " This is not a network failure and retrying will not help: the operator must set this environment" +
+  " variable in the MCP client's server config and restart the server — it is read only at startup.";
 
 /** Query-string parameters; `undefined` values are dropped. */
 export type Query = Record<string, string | number | boolean | undefined>;
@@ -85,13 +97,20 @@ export class DeliveryClient {
    * (e.g. "b2b/cargo/integration/v2/claims/info"). Retries 429 always; 5xx and
    * network errors/timeouts only for idempotent requests (see
    * {@link RequestOptions.idempotent}); any other non-2xx throws a
-   * {@link DeliveryError}.
+   * {@link DeliveryError}. Throws {@link CredentialsError} before any of that
+   * when YANGO_DELIVERY_TOKEN is missing.
    */
   async request<T = unknown>(
     method: HttpMethod,
     path: string,
     opts: RequestOptions = {},
   ): Promise<T> {
+    // A missing token is rejected before the request is built, retried or
+    // sent: it is a configuration problem, not transport trouble, so it must
+    // never enter the retry/backoff branch below — and fetch never fires
+    // without auth (pinned in client.test.ts).
+    if (!this.config.token) throw new CredentialsError(MISSING_TOKEN_MESSAGE);
+
     // Guard method !== "GET" keeps undici from crashing on a GET-with-body.
     const hasBody = opts.body !== undefined && method !== "GET";
 

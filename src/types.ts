@@ -21,8 +21,12 @@ export type CargoType = "van" | "lcv_m" | "lcv_l";
 export type CancelState = "free" | "paid";
 
 export interface DeliveryConfig {
-  /** Bearer token for the claims API. Treated as a secret. */
-  token: string;
+  /**
+   * Bearer token for the claims API. Treated as a secret. Absent when
+   * YANGO_DELIVERY_TOKEN is not set — the server still starts (degraded) and
+   * the client raises {@link CredentialsError} at call time.
+   */
+  token?: string;
   /** API root. Defaults to https://b2b.taxi.yandex.net. */
   baseUrl: string;
   /** Accept-Language header value (required by most claim methods). */
@@ -33,6 +37,22 @@ export interface DeliveryConfig {
   maxRetries?: number;
   /** Base backoff in milliseconds, doubled each retry. Defaults to 500. */
   retryBaseMs?: number;
+}
+
+/**
+ * Raised when a tool is called while YANGO_DELIVERY_TOKEN is missing. The
+ * message is the whole point of the class: it is the only text the calling
+ * model reads and relays, so it names the variable to set (and that the server
+ * needs a restart) instead of describing the failure. The client throws it
+ * before building the request — a missing credential is a configuration
+ * problem, not transport trouble, so it must never enter the retry/backoff
+ * branch or reach fetch.
+ */
+export class CredentialsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CredentialsError";
+  }
 }
 
 /**

@@ -21,29 +21,51 @@ npm run smoke      # live READ-ONLY call (claims/search limit 1; needs YANGO_DEL
 
 ## Architecture
 
-- `src/config.ts` — env → config; throws `ConfigError` (with a `reason` code) instead of
-  exiting, so `index.ts` can report the drop-off before dying. Required:
-  `YANGO_DELIVERY_TOKEN` (reason: `missing_token`). Optional: `YANGO_DELIVERY_BASE_URL`,
+- `src/config.ts` — env → config. A missing `YANGO_DELIVERY_TOKEN` is NOT an error: the
+  field stays `undefined`, the server starts degraded and the client raises
+  `CredentialsError` (lives in `types.ts`) at call time. `ConfigError` (with a `reason`
+  code) is reserved for malformed values, caught by `loadConfigOrDegraded` in `index.ts`
+  (no such checks exist today). Optional: `YANGO_DELIVERY_BASE_URL`,
   `YANGO_DELIVERY_LANG` (default `en`), `YANGO_DELIVERY_TIMEOUT_MS`,
   `YANGO_DELIVERY_MAX_RETRIES`.
-- `src/client.ts` — all HTTP. `request(method, path, {query, body, idempotent})` builds
-  the query string, sends `Authorization: Bearer` + `Accept-Language`, rejects paths
-  that resolve to a foreign origin (SSRF guard), enforces an AbortController timeout
-  that also covers reading the body, retries with backoff (honors `Retry-After`) and
-  throws `DeliveryError(status, body)`. One typed method per endpoint; `claims/create`
-  mints a UUID `request_id` (query param) when the caller omits one.
+- `src/client.ts` — all HTTP. `request(method, path, {query, body, idempotent})` first
+  rejects a missing token with `CredentialsError` (before building the request, the
+  retries and fetch — the message is the product: it names the env variable to set and
+  the needed restart), then builds the query string, sends `Authorization: Bearer` +
+  `Accept-Language`, rejects paths that resolve to a foreign origin (SSRF guard),
+  enforces an AbortController timeout that also covers reading the body, retries with
+  backoff (honors `Retry-After`) and throws `DeliveryError(status, body)`. One typed
+  method per endpoint; `claims/create` mints a UUID `request_id` (query param) when the
+  caller omits one.
 - `src/tools/claims.ts` — the seven claim-lifecycle tools; `src/tools/tracking.ts` —
   the five tracking/contact tools; `src/tools/raw.ts` — `raw_request` (path + query +
   body). `src/tools/util.ts` — `ok`/`fail`, the `READ_ONLY`/`WRITE`/`DESTRUCTIVE`
   annotation presets and shared zod schema factories.
-- `src/index.ts` — wires every `register*` into the McpServer.
+- `src/index.ts` — wires every `register*` into the McpServer. `loadConfigOrDegraded`
+  starts the server even on a config problem; without a token the initialize
+  `instructions` open with the unconfigured prefix (set `YANGO_DELIVERY_TOKEN` and
+  restart).
 - `src/telemetry.ts` — anonymous usage pings (ids/names/versions only, never data or
   arguments; fire-and-forget, must never block or throw; opt-out `ASKADS_TELEMETRY=0`).
-  `startup_failed` is the exception: `sendBlocking` awaits it, because the caller exits
-  right after. Its `reason` is a closed vocabulary — never a variable's name or value.
+  `server_start` means "a usable install started"; an install without a token sends
+  `unconfigured_start` instead. The `reason` is a closed vocabulary (`missing_token`) —
+  never a variable's name or value. `startup_failed` remains for a config unusable at
+  load time (malformed values), also fire-and-forget.
 
 ## Conventions (do not break)
 
+- **Never exit because of configuration.** A server that dies before the MCP handshake
+  leaves the user with a dead server and no reason — the sibling Metrica server's
+  telemetry showed that state accounted for nearly every unconfigured install. A missing
+  token is a survivable state: start, answer `initialize`/`tools/list` (with the
+  unconfigured prefix in the instructions), and reject tool calls with
+  `CredentialsError`. There are no login tools: the token comes only from the
+  environment, so the fix is the operator setting `YANGO_DELIVERY_TOKEN` and restarting
+  the server. `config.test.ts`, `client.test.ts` and `test/dist-smoke.test.js` pin this.
+- **Credential failures are not transport failures.** `CredentialsError` is thrown
+  before the retry/backoff branch (and before fetch) in `request()` — retrying it burns
+  seconds of backoff before the user sees the one message that helps. Pinned by a
+  "fetch must not be called" assertion in `client.test.ts`.
 - **This is a write API — gate the retries.** 429 is always retried; 5xx and network
   errors are retried ONLY when `idempotent` is set (GETs, side-effect-free POST reads,
   and claims/create thanks to its `request_id` token). Never mark `claims/accept` or

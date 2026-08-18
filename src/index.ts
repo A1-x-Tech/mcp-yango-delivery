@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { DeliveryClient } from "./client.js";
-import { ConfigError, loadConfig } from "./config.js";
+import { ConfigError, DEFAULT_BASE, loadConfig } from "./config.js";
 import { instrumentToolCalls, Telemetry } from "./telemetry.js";
 import type { DeliveryConfig } from "./types.js";
 import { registerClaimsTools } from "./tools/claims.js";
@@ -31,6 +31,18 @@ const INSTRUCTIONS =
   "and cancelling one can be paid, so confirm with the user before accept_claim, cancel_claim, " +
   "create_claim with auto_accept=true, or a state-changing raw_request.";
 
+/**
+ * Prepended to INSTRUCTIONS when the token is missing. The model reads this
+ * before it picks a tool, so an unconfigured session opens with the fix rather
+ * than with a failed call. There is no in-chat login here: the token comes
+ * only from the environment, so the fix is an operator action + restart.
+ */
+const UNCONFIGURED_PREFIX =
+  "ATTENTION: Yango Delivery is not connected yet — the YANGO_DELIVERY_TOKEN environment variable " +
+  "is not set, so every tool call will fail. The operator must set YANGO_DELIVERY_TOKEN (OAuth " +
+  'token from the delivery cabinet, Integration tab -> "Get token") in the MCP client\'s server ' +
+  "config and restart this server — the variable is read only at startup. ";
+
 /** Reads the package version so the server reports its real version to MCP clients. */
 function readVersion(): string {
   try {
@@ -42,29 +54,46 @@ function readVersion(): string {
 }
 
 /**
- * Loads the config, reporting the drop-off if it is missing. An unconfigured
- * server dies before the MCP handshake, so this ping is the only trace such an
- * install ever leaves — and it has to be awaited, or process.exit() below would
- * kill the request in flight.
+ * Loads the config without dying on a bad value. A server that exits here never
+ * completes the MCP handshake, so the user sees a dead server and no reason —
+ * instead the problem is carried into the session, where the model can read it
+ * and relay it. (A missing token is not an error at all — loadConfig leaves the
+ * field undefined; today it has no malformed-value checks either, so the catch
+ * guards future ones.)
  */
-async function loadConfigOrExit(telemetry: Telemetry): Promise<DeliveryConfig> {
+function loadConfigOrDegraded(telemetry: Telemetry): {
+  config: DeliveryConfig;
+  problem?: ConfigError;
+} {
   try {
-    return loadConfig();
+    return { config: loadConfig() };
   } catch (err) {
     if (!(err instanceof ConfigError)) throw err;
     console.error(`Error: ${err.message}`);
-    await telemetry.sendBlocking("startup_failed", { reason: err.reason });
-    process.exit(1);
+    // Fire-and-forget now that the process survives: the historical
+    // `startup_failed` funnel stays comparable, but nothing blocks startup.
+    telemetry.send("startup_failed", { reason: err.reason });
+    return {
+      config: {
+        baseUrl: process.env.YANGO_DELIVERY_BASE_URL || DEFAULT_BASE,
+        lang: process.env.YANGO_DELIVERY_LANG || "en",
+      },
+      problem: err,
+    };
   }
 }
 
 async function main(): Promise<void> {
   // Anonymous usage pings (ids/names/versions only, never data or arguments);
-  // opt out with ASKADS_TELEMETRY=0. Built before the config so a missing token
-  // can be reported; wired to the server before tools register.
+  // opt out with ASKADS_TELEMETRY=0. Built before the config so a config
+  // problem can be reported; wired to the server before tools register.
   const telemetry = new Telemetry(readVersion());
-  const config = await loadConfigOrExit(telemetry);
+  const { config, problem } = loadConfigOrDegraded(telemetry);
   const client = new DeliveryClient(config);
+
+  // Decided once, at startup: the token comes only from the environment, so
+  // "restart after setting the variable" is the accurate advice to give.
+  const connected = Boolean(config.token);
 
   const server = new McpServer(
     {
@@ -72,13 +101,21 @@ async function main(): Promise<void> {
       version: readVersion(),
     },
     // Surfaces in the initialize result, so the model reads it before its first call.
-    { instructions: INSTRUCTIONS },
+    {
+      instructions: connected
+        ? INSTRUCTIONS
+        : UNCONFIGURED_PREFIX + (problem ? `Configuration problem: ${problem.message} ` : "") + INSTRUCTIONS,
+    },
   );
 
   instrumentToolCalls(server, telemetry);
   server.server.oninitialized = () => {
     telemetry.setClientInfo(server.server.getClientVersion());
-    telemetry.send("server_start");
+    // Split on purpose: `server_start` keeps meaning "a usable install started",
+    // so the unconfigured case gets its own event instead of inflating that
+    // number. The reason vocabulary is the historical closed set.
+    if (connected) telemetry.send("server_start");
+    else telemetry.send("unconfigured_start", { reason: problem?.reason ?? "missing_token" });
   };
 
   registerClaimsTools(server, client);
@@ -87,7 +124,11 @@ async function main(): Promise<void> {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("mcp-yango-delivery running on stdio");
+  console.error(
+    `mcp-yango-delivery running on stdio${
+      connected ? "" : " (YANGO_DELIVERY_TOKEN is not set — set the variable and restart)"
+    }`,
+  );
 }
 
 main().catch((err) => {
