@@ -74,9 +74,11 @@
 
 **Через интерфейс приложения:**
 
-1. Откройте **Settings → Plugins → MCP servers**.
+1. Откройте **Settings → MCP servers**.
 2. Нажмите **Add server**.
-3. Добавьте команду запуска `npx -y mcp-yango-delivery@latest` и переменную окружения `YANGO_DELIVERY_TOKEN` со своим токеном.
+3. Выберите **STDIO**, затем укажите команду запуска `npx -y mcp-yango-delivery@latest` и переменную окружения `YANGO_DELIVERY_TOKEN` со своим токеном.
+
+4. Нажмите **Save**, затем **Restart**.
 
 **Через командную строку:**
 
@@ -125,9 +127,9 @@ claude mcp list
 
 <br>
 
-1. Откройте Claude Desktop и перейдите в **Settings → Developer**.
-2. Нажмите **Edit Config**.
-3. Добавьте сервер в `mcpServers`:
+Актуальный официальный путь — **Settings → Extensions**. Для пользовательского desktop extension откройте **Advanced settings → Extension Developer → Install Extension…**, выберите файл `.mcpb` и следуйте подсказкам.
+
+Этот репозиторий сейчас публикует npm-пакет со stdio и пока не содержит `.mcpb`. Поэтому используйте приведённый ниже JSON stdio-конфиг как fallback только в сборках Claude Desktop, где ещё поддерживается локальная конфигурация:
 
 ```json
 {
@@ -143,12 +145,9 @@ claude mcp list
 }
 ```
 
-Если кнопки **Edit Config** нет, откройте файл конфигурации напрямую:
+В таких сборках сохраните его в `~/Library/Application Support/Claude/claude_desktop_config.json` на macOS или `%APPDATA%\Claude\claude_desktop_config.json` на Windows.
 
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-[Официальная инструкция Claude Desktop](https://claude.com/docs/connectors/building/mcp-apps/getting-started)
+[Официальная инструкция Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop)
 
 </details>
 
