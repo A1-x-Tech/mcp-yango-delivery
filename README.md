@@ -3,8 +3,8 @@
 **English** | [Русский](./README.ru.md)
 
 [![npm](https://img.shields.io/npm/v/mcp-yango-delivery)](https://www.npmjs.com/package/mcp-yango-delivery)
-[![CI](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml/badge.svg)](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml)
 [![Glama](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery/badges/score.svg)](https://glama.ai/mcp/servers/A1-x-Tech/mcp-yango-delivery)
+[![CI](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml/badge.svg)](https://github.com/A1-x-Tech/mcp-yango-delivery/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 **A1 Yango Delivery MCP** connects an AI app to a corporate Yango Delivery account. Estimate an express delivery, order a courier, track the route and share a tracking link with the recipient using ordinary language.
