@@ -73,3 +73,6 @@ First full release (version 0.0.1 was a stub reserving the npm name).
   real MCP handshake over stdio); CI on Node 20/22/24.
 
 [1.2.0]: https://github.com/A1-x-Tech/mcp-yango-delivery/releases/tag/v1.2.0
+[1.1.0]: https://github.com/A1-x-Tech/mcp-yango-delivery/releases/tag/v1.1.0
+[1.0.0]: https://github.com/A1-x-Tech/mcp-yango-delivery/releases/tag/v1.0.0
+[0.1.0]: https://github.com/A1-x-Tech/mcp-yango-delivery/releases/tag/v0.1.0
