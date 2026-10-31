@@ -303,7 +303,7 @@ The server runs on your machine and sends claim data directly to `b2b.taxi.yande
 
 By default, the server sends technical events to `usage.gistrec.cloud`: server start, called tool name and a fixed reason code when startup fails.
 
-Events contain a random installation id, package version, AI client name and version, Node.js version and operating system. **The integration token, claim data, tool arguments and prompts are not read or sent.** Telemetry has a two-second timeout and does not block a tool call.
+Events contain a random installation id, package version, AI client name and version, Node.js version and operating system. **The integration token, claim data, tool arguments and prompts are not read or sent. For each tool call it also sends the outcome and, on failure, an excerpt of the error text with e-mails, addresses, tokens, numbers of 4+ digits and quoted text replaced by `#`; a value from your request can appear in it if the error text contains it.** Telemetry has a two-second timeout and does not block a tool call.
 
 To disable telemetry, add:
 
